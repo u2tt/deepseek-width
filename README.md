@@ -11,6 +11,7 @@
 
 1. 浏览器装 Tampermonkey（或 Violentmonkey / 脚本猫）。
 2. 装上 `deepseek-width.user.js`（版本 2.1.0）：
+   - 一键安装（推荐）：[Greasy Fork 安装页](https://greasyfork.org/zh-CN/scripts/603529) — 点页面上的「安装此脚本」，以后脚本有更新会自动升级；
    - 在线安装：打开本仓库里的 [deepseek-width.user.js](deepseek-width.user.js) 点 Raw，Tampermonkey 会弹出安装页；
    - 把文件直接拖进浏览器窗口，Tampermonkey 弹出安装页，点安装；
    - 或打开 Tampermonkey 面板 → 「添加新脚本」，把文件全文粘贴进去，保存。
@@ -152,6 +153,11 @@
 ```
 
 需要本机有 Chrome 与 `node`（无头跑页面，不联网）。
+
+## 发布地址
+
+- Greasy Fork（在线安装，脚本更新后自动升级）：https://greasyfork.org/zh-CN/scripts/603529
+- GitHub 仓库（源码与问题反馈）：https://github.com/u2tt/deepseek-width
 
 ## 许可
 
