@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>diag</title>
+<style>
+  html,body{margin:0;height:100%;background:#212327;color:#e8eaed;font-family:system-ui}
+  #app{display:flex;height:100vh}
+  #side{width:260px;flex:none;background:#1a1c1f}
+  #main{flex:1;min-width:0;display:flex;flex-direction:column}
+  #scroll{flex:1;overflow:auto}
+  #col{max-width:768px;width:100%;margin:0 auto;padding:16px}
+  #inputwrap{max-width:768px;width:100%;margin:0 auto;padding:8px}
+</style>
+</head>
+<body data-theme="dark">
+<script>
+window.__errs=[];
+window.addEventListener('error',function(e){window.__errs.push(String(e.message)+' @'+(e.filename||'').split('/').pop()+':'+e.lineno)});
+window.addEventListener('unhandledrejection',function(e){window.__errs.push('rej: '+String(e.reason))});
+</script>
+<div id="app"><div id="side"></div><div id="main">
+  <div id="scroll"><div id="col"><div>a</div></div></div>
+  <div id="inputwrap"><div style="height:40px;background:#333"></div></div>
+</div></div>
+<script src="../deepseek-width.user.js"></script>
+<script>
+setTimeout(function(){
+  var host=document.getElementById('dsw-host');
+  var info={
+    errs:window.__errs,
+    host:!!host,
+    shadow:!!(host&&host.shadowRoot),
+    style:!!document.getElementById('dsw-style'),
+    bodyChildren:document.body.children.length,
+    tagged:document.querySelectorAll('[data-dsw-col]').length,
+    colMax:getComputedStyle(document.getElementById('col')).maxWidth,
+    colW:Math.round(document.getElementById('col').getBoundingClientRect().width),
+    mainW:Math.round(document.getElementById('main').getBoundingClientRect().width),
+    rootVar:getComputedStyle(document.documentElement).getPropertyValue('--dsw-pct'),
+    ready:document.readyState
+  };
+  var pre=document.createElement('pre');
+  pre.id='dsw-out';
+  pre.textContent='DSWJSON='+JSON.stringify(info);
+  document.body.appendChild(pre);
+},1500);
+</script>
+</body></html>

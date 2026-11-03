@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>DeepSeek Mock · 自动收起思考 + 设置面板</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#212327;color:#e8eaed;
+    font-family:-apple-system,"PingFang SC",system-ui,sans-serif}
+  #app{display:flex;height:100vh}
+  #side{width:260px;flex:none;background:#1a1c1f;overflow:hidden}
+  #main{flex:1;min-width:0;display:flex;flex-direction:column;background:#212327}
+  #scroll{flex:1;overflow:auto}
+  #col{max-width:768px;width:100%;margin:0 auto;padding:16px}
+  .ds-message{background:#2b2d31;border-radius:10px;padding:14px;margin:10px 0}
+  /* 站点的思考块：标题行可点，收起后正文整块不显示 —— 与真实页一致 */
+  .headrow{display:flex;align-items:center;gap:6px;height:34px;cursor:pointer;color:#9aa0a6}
+  .headrow .ico{display:flex;flex:none}
+  .headrow .chev{font-size:14px;transform:rotate(90deg);transition:transform .15s}
+  .thinkwrap.folded .chev{transform:none}
+  .thinkwrap.folded .tbody{display:none}
+  .tbody p{margin:6px 0;color:#8ab4f8}
+  .ans{margin-top:8px}
+</style>
+</head>
+<body data-theme="dark">
+<div id="app">
+  <div id="side"><div style="padding:16px;color:#666">侧栏</div></div>
+  <div id="main">
+    <div id="scroll"><div id="col">
+      <div class="ds-message"><div class="q">问题一</div></div>
+      <div class="ds-message" id="m1">
+        <div class="thinkwrap">
+          <div class="headrow"><span class="ico"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#8ab4f8" stroke-width="1.5"/><circle cx="8" cy="8" r="2.5" fill="#8ab4f8"/></svg></span><span class="lb">已思考（用时 3 秒）</span><span class="chev">›</span></div>
+          <div class="tbody"><p>思考内容 A 第一段</p><p>思考内容 A 第二段</p><p>思考内容 A 第三段</p></div>
+        </div>
+        <div class="ans">回答一</div>
+      </div>
+      <div class="ds-message" id="m2">
+        <div class="thinkwrap">
+          <div class="headrow"><span class="ico"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#8ab4f8" stroke-width="1.5"/><circle cx="8" cy="8" r="2.5" fill="#8ab4f8"/></svg></span><span class="lb">思考中…</span><span class="chev">›</span></div>
+          <div class="tbody"><p>思考内容 B 正在输出</p></div>
+        </div>
+        <div class="ans">回答二</div>
+      </div>
+      <div class="ds-message" id="m3">
+        <div class="thinkwrap">
+          <div class="headrow"><span class="ico"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#8ab4f8" stroke-width="1.5"/><circle cx="8" cy="8" r="2.5" fill="#8ab4f8"/></svg></span><span class="lb">已思考（用时 8 秒）</span><span class="chev">›</span></div>
+          <div class="tbody"><p>思考内容 C 第一段</p><p>思考内容 C 第二段</p></div>
+        </div>
+        <div class="ans">回答三</div>
+      </div>
+      <div class="ds-message"><div class="q">问题二</div></div>
+      <div class="ds-message"><div class="ans">只有一条子元素的消息，不该被动</div></div>
+    </div></div>
+  </div>
+</div>
+<script>
+  // 模拟站点自己的收起逻辑：点标题行切换 .folded，正文靠 CSS 隐藏。
+  document.querySelectorAll('.headrow').forEach(function (h) {
+    h.addEventListener('click', function () {
+      h.parentElement.classList.toggle('folded');
+    });
+  });
+</script>
+<script src="../deepseek-width.user.js"></script>
+<script src="./think-driver.js"></script>
+</body>
+</html>

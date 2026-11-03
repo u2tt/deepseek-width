@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>DeepSeek Mock 滚动锚定</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#212327;color:#e8eaed;
+    font-family:-apple-system,"PingFang SC",system-ui,sans-serif}
+  #app{display:flex;height:100vh}
+  #side{width:260px;flex:none;background:#1a1c1f;overflow:hidden}
+  #main{flex:1;min-width:0;display:flex;flex-direction:column;background:#212327}
+  #scroll{flex:1;min-height:0;overflow:auto}
+  #wrap1280{max-width:1280px;width:100%;margin:0 auto}
+  #col{max-width:768px;width:100%;margin:0 auto;padding:16px}
+  .msg{background:#2b2d31;border-radius:10px;padding:14px;margin:10px 0;line-height:1.75}
+  .msg b{color:#8ab4f8}
+  .msg p{margin:8px 0}
+</style>
+</head>
+<body data-theme="dark">
+<div id="app">
+  <div id="side"><div style="padding:12px;color:#666">侧栏</div></div>
+  <div id="main">
+    <div id="scroll"><div id="wrap1280"><div id="col"></div></div></div>
+  </div>
+</div>
+<script src="../deepseek-width.user.js"></script>
+<script src="./scroll-driver.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>DeepSeek Mock</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#212327;color:#e8eaed;
+    font-family:-apple-system,"PingFang SC",system-ui,sans-serif}
+  #app{display:flex;height:100vh}
+  #side{width:260px;flex:none;background:#1a1c1f;overflow:hidden}
+  #main{flex:1;min-width:0;display:flex;flex-direction:column;background:#212327}
+  #scroll{flex:1;overflow:auto}
+  #wrap1280{max-width:1280px;width:100%;margin:0 auto}
+  #col{max-width:768px;width:100%;margin:0 auto;padding:16px}
+  .msg{background:#2b2d31;border-radius:10px;padding:14px;margin:10px 0}
+  #inputwrap{max-width:768px;width:100%;margin:0 auto;padding:8px 16px 16px}
+  #input{height:46px;border-radius:10px;background:#2b2d31}
+  .narrow{max-width:320px;margin:0 auto;padding-top:16px;color:#666}
+  #overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5)}
+  #overlay.open{display:flex}
+  #modal{max-width:660px;width:100%;background:#2b2d31;border-radius:12px;padding:16px}
+</style>
+</head>
+<body data-theme="dark">
+<div id="app">
+  <div id="side"><div class="narrow">侧栏干扰项(320px)</div></div>
+  <div id="main">
+    <div id="scroll"><div id="wrap1280"><div id="col">
+      <div class="msg">消息一</div><div class="msg">消息二</div><div class="msg">消息三</div>
+    </div></div></div>
+    <div id="inputwrap"><div id="input"></div></div>
+  </div>
+  <div id="overlay"><div id="modal"><div class="msg">居中弹窗 660px</div></div></div>
+</div>
+<script src="../deepseek-width.user.js"></script>
+<script src="./test-driver.js"></script>
+</body>
+</html>
