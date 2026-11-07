@@ -159,6 +159,8 @@
 - Greasy Fork（在线安装，脚本更新后自动升级）：https://greasyfork.org/zh-CN/scripts/603529
 - GitHub 仓库（源码与问题反馈）：https://github.com/u2tt/deepseek-width
 
+Greasy Fork 脚本页的「附加信息」（介绍页）从本仓库的 [docs/greasyfork-description.md](docs/greasyfork-description.md) 同步，改这个文件并 push 即可更新介绍页，不用上 Greasy Fork 改。
+
 ## 许可
 
 MIT，见 [LICENSE](LICENSE)。
