@@ -15,7 +15,8 @@
 1. 点本页的「安装此脚本」，在弹出的 Tampermonkey 页面里确认安装。
 2. 也可以在 Tampermonkey 面板里新建脚本，把 https://github.com/u2tt/deepseek-width/blob/main/deepseek-width.user.js 的内容整段粘贴进去保存。
 3. 脚本带 @version，Tampermonkey 会按自己的检查周期比对更新；想立刻检查时在 Tampermonkey 面板点「检查脚本更新」。
-4. 卸载时在 Tampermonkey 面板删除本脚本即可，页面样式随之恢复。
+4. 已装过旧版本的，脚本更新后刷新页面即生效；脚本面板里显示的版本号与本页版本号一致。
+5. 卸载时在 Tampermonkey 面板删除本脚本即可，页面样式随之恢复。
 
 ## 使用
 
