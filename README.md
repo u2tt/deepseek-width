@@ -155,9 +155,9 @@
 - `test/shot-100.png` / `test/shot-55.png` — 模拟页效果对照截图。
 - `gemini-width.user.js` — Gemini 版用户脚本（第二节）。
 - `test/mock-gemini.html` — 模拟 Gemini 布局的测试页（`?mode=conv` 会话视图、`?mode=zero` 零态首页）。
-- `test/gemini-driver.js` — Gemini 版测试驱动（原生 / 100 / 70 / 40 / 原生按钮 / 折叠展开侧栏 / Esc / 窗口变窄）。
+- `test/gemini-driver.js` — Gemini 版测试驱动（原生 / 100 / 80 / 原生按钮 / 折叠展开侧栏 / Esc / 窗口变窄 / 回滚）。
 - `test/mock-gemini-run.html` — 用两个 iframe 同时跑会话与零态的测试外壳（脚本全文内嵌在页内）。
-- `test/gw-70.png` / `test/gw-panel.png` — 真实 Gemini 页面 70% 效果与设置面板截图。
+- `test/gw-real-100.png` / `test/gw-real-60.png` / `test/gw-panel.png` — 真实 Gemini 页面截图。
 - `run-test.sh` — 一条命令跑完无头测试（含 Gemini 套件，会临时起 127.0.0.1:8931 的静态服务）。
 
 ### 自测
@@ -177,23 +177,22 @@ Greasy Fork 脚本页的「附加信息」（介绍页）从本仓库的 [docs/g
 
 ## 二、Gemini 内容宽度调节
 
-同样的思路，搬到 gemini.google.com：把对话列、输入框、底部免责声明按同一比例收窄并居中，比例是相对窗口宽度的，拖动浏览器窗口时宽度自动跟随。面板同样不常驻，从油猴菜单打开。
+相同的思路搬到 gemini.google.com：整列内容（对话、回答、免责声明、零态首页标题）按同一比例收窄并居中，输入框跟随居中并保持 Gemini 自身的 660px 上限。比例是相对「内容区」的，不是固定像素，拖浏览器窗口或折叠侧栏时宽度自动跟随。面板不常驻，从油猴菜单打开。
 
 ### 安装
 
 1. 浏览器装 Tampermonkey（或 Violentmonkey / 脚本猫）。
-2. 装上 `gemini-width.user.js`（版本 1.0.1）：打开仓库里的 [gemini-width.user.js](gemini-width.user.js) 点 Raw，或把文件直接拖进浏览器窗口，Tampermonkey 弹出安装页后点安装。
+2. 装上 `gemini-width.user.js`（版本 2.0.1）：打开仓库里的 [gemini-width.user.js](gemini-width.user.js) 点 Raw，或把文件直接拖进浏览器窗口，Tampermonkey 弹出安装页后点安装。
 3. 打开 https://gemini.google.com/ ，点油猴图标 →「⚙ 打开设置面板」，右下角弹出设置页。
 
 ### 使用
 
 | 操作 | 效果 |
 | --- | --- |
-| 拖滑块 | 30% – 100% 无级调节，100% 就是 Gemini 原生宽度 |
+| 拖滑块 | 30% – 100% 无级调节，百分比按内容区宽度算，100% 就是 Gemini 原生宽度 |
 | 面板上滚轮 | 微调 1%；按住 Shift 滚轮 10%；按住 Alt 滚轮 5% |
 | 「满宽」/「90%」/「75%」/「60%」 | 快速跳到常用比例 |
 | 「原生」 | 撤销宽度覆盖，恢复 Gemini 原始版式 |
-| 「重新测量侧栏」 | 侧栏宽度读数不对时手动重量一次 |
 | 拖面板标题 | 移动面板位置 |
 | × / Esc | 关闭面板（设置已保存） |
 | 油猴菜单「⚙ 打开设置面板」 | 唯一一条菜单项，调出设置页 |
@@ -201,52 +200,33 @@ Greasy Fork 脚本页的「附加信息」（介绍页）从本仓库的 [docs/g
 
 ### 实现方式
 
-- Gemini 的内容列是 `div.chat-container`（原生 992px = 窗口 1280 − 侧栏 288），输入框 `.input-area-container` 原生被徽标与输入聚焦动画钉成 660px，底部免责声明 `hallucination-disclaimer` 是 830px。
-- 只改这四处的宽度表达式，不动侧栏、不动 `bard-sidenav-content`：
-
-  ```css
-  html.gw-on chat-window{justify-content:center!important;}
-  html.gw-on .chat-container{
-    width:100%!important;
-    max-width:calc((100vw - var(--gw-sb,288px)) * var(--gw-k,1))!important;
-    margin-left:auto!important; margin-right:auto!important; box-sizing:border-box!important;
-  }
-  html.gw-on .input-area-container{
-    width:calc(var(--gw-k,1) * 760px)!important; max-width:760px!important;
-    position:static!important; top:auto!important; bottom:auto!important;
-    margin:0!important; transform:none!important; box-sizing:border-box!important;
-  }
-  html.gw-on input-container{display:flex!important; flex-direction:column!important; align-items:center!important;}
-  html.gw-on hallucination-disclaimer{
-    width:calc((100vw - var(--gw-sb,288px)) * var(--gw-k,1))!important; max-width:760px!important;
-  }
-  ```
-
-- `--gw-k` 是用户调的比例，`--gw-sb` 是侧栏实际宽度。两者都是纯 CSS 变量，窗口变宽变窄时宽度自动跟着变，不需要脚本在 resize 里重算，也没有一帧延迟。
-- 侧栏折叠成 52px 时不重算会整体右偏，所以脚本每 1.2 秒量一次 `bard-sidenav` 的宽度写进 `--gw-sb`（量到 0 或超过窗口 60% 时视为无效读数，保持原值）。
-- 输入框必须从 `position:absolute; top:-404px` 归位成 `static`，再由 `input-container` 改成纵向居中，否则它永远偏在左侧。
-- **面板 DOM 全部用 createElement 搭**：Gemini 开了 Trusted Types，`shadowRoot.innerHTML = '...'` 会直接抛 `This document requires 'TrustedHTML' assignment`，面板建不出来（真实页面上正是这个原因导致面板没出现）。现在只在需要时才用 `trustedTypes.createPolicy` 生成 HTML，面板本身不再依赖它。
-- 状态用 `GM_setValue`，没有 `GM_*` 时回落 `localStorage`。
+- 侧栏 `bard-sidenav` 是 flex 兄弟项，`bard-sidenav-content` 的宽度天然等于「窗口 − 侧栏」，且不受内容影响。脚本把它设成容器查询容器，`chat-window` 的宽度写成 `var(--gw-k)` = `Ncqw`，比例因此始终相对内容区，侧栏一折叠就自动变宽重算。
+- `chat-window` 同时要 `flex:none`：它原生是 flex 子项，不取消拉伸时 `width` 会被 flex 布局覆盖，比例不生效。
+- 通道打通：`.chat-container`、`.chat-history-scroll-container`、`infinite-scroller.chat-history`、`.conversation-container`、`user-query`、`model-response`、`model-response-disclaimers` 全部放开到 100%，列宽只由 `chat-window` 决定。
+- 输入框 `.input-area-container` 原生 `position:absolute`，改成 `static` 后由 `input-container`（改为纵向居中）摆放，宽度固定 660px 上限，不随比例缩放；免责声明与输入框同列居中。
+- 只有 `--gw-k` 一个动态量，其余全是静态 CSS，窗口变化由浏览器自己重算，不需要在 resize 里跑计算。
+- **面板 DOM 全部用 createElement 搭**：Gemini 开了 Trusted Types，`shadowRoot.innerHTML = '...'` 会直接抛 `This document requires 'TrustedHTML' assignment`，面板建不出来。现在只在需要时才用 `trustedTypes.createPolicy` 生成 HTML。
+- 状态用 `GM_setValue`，没有 `GM_*` 时回落 `localStorage`；Gemini 是 SPA，样式表被框架换掉时脚本每 1.5 秒补回。
 
 ### 已验证
 
-模拟页（`test/mock-gemini.html`，1280 宽 iframe，会话视图与零态首页两种）无头 Chrome 实测：
+无头 Chrome，模拟页 `test/mock-gemini.html`（1400×1000 iframe，会话视图与零态首页两种）与真实页面 gemini.google.com/app（1440×900，未登录零态首页）：
 
-- 会话视图：原生 `.chat-container` 992@288、`.conversation-container` 760@404。
-- 100% → 992@288 / 输入框 760@488；70% → 列 694@437、对话 662@453、输入框 532@567；40% → 397@586 / 365@602 / 304@646，三者同宽且都居中。
-- 「原生」按钮 → `gw-on` 摘掉、列回到 992@288；再跳 70% 恢复。
-- 折叠侧栏 → `--gw-sb` 变 52px、列宽 860@236；展开后回 288px、694@437。
-- Esc 关面板、Alt+Shift+W 重开并保留 70%；窗口从 1280 缩到 960，列宽自动从 694 变 672，输入框仍是 532。
+| 场景 | 结果 |
+| --- | --- |
+| 模拟页 100% | 列 1112@288，等于内容区满宽 |
+| 模拟页 80% | 列 890@399，居中；折叠侧栏后内容区 1348，列 1078 仍居中 |
+| 模拟页窗口收窄 | 宽 1112 → 窄 672，列 890 → 538，输入框不变 |
+| 模拟页回滚 | 摘掉开关后输入框位置与原生完全一致 |
+| 模拟页断言 | 会话视图 13 项、零态 12 项全部通过；DeepSeek 脚本 5 组套件 28 项全部通过 |
+| 真实页 100% | chat-window 1152、零态容器 1152、免责声明 1120、输入框 660 |
+| 真实页 80% | chat-window 922@403、零态容器 922、免责声明 890 |
+| 真实页 60% | chat-window 691@518、零态容器 691、输入框 659、免责声明 659 |
+| 真实页回到 100% | 全部复位到原生数值 |
 
-真实页面 https://gemini.google.com/app （1280 视口，未登录零态首页）实测：
+截图：`test/gw-real-100.png`（100%）、`test/gw-real-60.png`（60%）、`test/gw-panel.png`（设置面板）。
 
-- 原生：侧栏 288、`.chat-container` 992@288、零态容器 992@288、输入框 660@454、免责声明 830@369。
-- 100% → 992@288 / 输入框 760@404 / 免责声明 760@404；70% → 694@437 / 532@518 / 694@437；50% → 496@536 / 380@594 / 496@536，三者同步收窄且居中。
-- 点「关闭边栏」后侧栏 52px，脚本轮询把 `--gw-sb` 改成 52px，列宽 1228@52、输入框 760@286 仍居中；展开后回到 288px。
-- 面板：Alt+Shift+W 弹出，268×164，滑块、五个快捷按钮、重新测量按钮都可用；点「75%」后列 744@412、输入框 570@499，零态标题同宽；Esc 关闭后 `display:none`；点「原生」恢复 992@288 与输入框 660。
-- 截图：`test/gw-70.png`（70% 下的首页）、`test/gw-panel.png`（75% + 设置面板）。
-
-已知限制：Gemini 的侧栏是与内容区平级的 flex 兄弟项，内容区宽度被它占位限制在「窗口 − 侧栏」以内，所以 100% 档位就是原生宽度，这个脚本只做「收窄并居中」，做不到比原生更宽。
+已知限制：侧栏占位决定了内容区上限，所以 100% 就是 Gemini 原生宽度，脚本只做「收窄并居中」。输入框保持 Gemini 固定的 660px 上限，不随比例缩小。
 
 ## 许可
 

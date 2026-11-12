@@ -2,9 +2,9 @@
 // @name         Gemini 内容宽度调节
 // @name:en      Gemini Content Width Tuner
 // @namespace    https://github.com/u2tt/gemini-width
-// @version      1.0.1
-// @description  按相对比例调节 Gemini 网页端对话列与输入框的宽度（随浏览器窗口自适应），面板不常驻，从油猴菜单打开设置
-// @description:en Tune the conversation column and input box width of Gemini by a relative percentage that follows the window size. No resident panel — open settings from the userscript menu.
+// @version      2.0.1
+// @description  按相对比例调节 Gemini 网页端整列内容的宽度（对话、回答、输入框、免责声明一起收窄并居中，随窗口自适应），设置面板从油猴菜单打开
+// @description:en Tune the whole content column of Gemini (conversation, answers, input box, disclaimer) by a relative percentage that follows the window size. Open settings from the userscript menu.
 // @author       chenxinyu
 // @license      MIT
 // @homepageURL  https://github.com/u2tt/gemini-width
@@ -28,20 +28,18 @@
         min: 30,
         max: 100,
         def: 100,
-        // Gemini 原生输入框上限 760px；比例 100% 就等于它，页面回到原样。
-        maxCol: 760,
-        // 侧栏宽度（展开态）。折叠态由 measureSidebar() 实测覆盖。
-        sbW: 288,
+        // 输入框自身的宽度上限（Gemini 原生值），不随比例缩放。
+        maxCol: 660,
         // 自测用：模拟"浏览器窗口变化"的事件名（真窗口变化走 resize）。
         event: 'gw:resize'
     };
 
-    var state = { pct: CFG.def };
+    // on=false 表示回到 Gemini 原生宽度（面板上的「原生」）。
+    var state = { pct: CFG.def, on: true };
     var host = null;
     var root = null;
     var els = {};
     var themeDark = true;
-    var sbPx = CFG.sbW;
     var resizeRaf = 0;
 
     /* ================= 状态存取 ================= */
@@ -62,6 +60,7 @@
         try {
             var o = JSON.parse(raw);
             if (o && typeof o.pct === 'number') state.pct = clampPct(o.pct);
+            if (o && typeof o.on === 'boolean') state.on = o.on;
         } catch (e) {}
     }
 
@@ -75,80 +74,102 @@
     }
 
     /* ================= 样式规则 =================
-       三条结构事实（2026-11 在 gemini.google.com 真实页面实测）：
-       1. 消息与零态首页都挂在 chat-window > .chat-container 里，chat-window 是
-          display:flex、justify-content:center 的行容器——所以把 .chat-container
-          居中要靠「宽度 + 左右 auto 外边距」，它自己会用 justify-content 居中。
-       2. 输入框 .input-area-container 原生是 position:absolute + transform，
-          宽度被 660px 的上限锁死；必须改成 position:static 才吃得到父级居中，
-          再由 input-container 的 align-items:center 把它拉到正中。
-       3. 全部宽度用 vw 计算：浏览器窗口一变，列宽自动跟着变，不需要脚本重算。
+       结构事实（2026-11 在 gemini.google.com 真实页面实测 + 用户导出的完整 DOM 核对）：
+       1. 侧栏 bard-sidenav 是 flex 兄弟项，占掉 288px（折叠 52px）；内容区
+          bard-sidenav-content 的宽度就是「窗口宽 - 侧栏宽」，它不受 chat-window 影响。
+       2. chat-window 是内容区里唯一的宽度承载层（780 行的零态/对话都挂在它下面）。
+          直接给它 width 百分比会因为「子元素最小内容宽度」撑回去，所以改成
+          bard-sidenav-content 当容器查询容器，chat-window 写 Ncqw —— cqw 只跟
+          容器自身的宽度算，不会被内容撑大。
+       3. 输入框 .input-area-container 原生 position:absolute、宽 660px 上限，
+          input-container 是 flex 列容器。改成 static 之后由 input-container 居中，
+          提示条 hallucination-disclaimer 也走同一套居中。
+       4. 100% 就是 Gemini 原生宽度，之后只收窄，不再出现"只动输入框"的错位。
     */
     function styleText() {
-        var col = 'calc((100vw - var(--gw-sb,288px)) * var(--gw-k,1))';
+        var cls = 'html.' + CFG.cls;
         return [
-            'html.' + CFG.cls + ' chat-window{justify-content:center!important}',
-            'html.' + CFG.cls + ' .chat-container{width:100%!important;' +
-                'max-width:' + col + '!important;' +
+            // 容器查询：cqw 以 bard-sidenav-content 的内容盒为 100%
+            cls + ' bard-sidenav-content{container-type:inline-size!important}',
+
+            // 主体：chat-window 自己的宽度 = 内容区 x 比例，水平居中，两侧阴影区透明
+            cls + ' chat-window{flex:none!important;width:var(--gw-k,100cqw)!important;max-width:none!important;' +
                 'margin-left:auto!important;margin-right:auto!important;box-sizing:border-box!important}',
-            'html.' + CFG.cls + ' .input-area-container{width:calc(var(--gw-k,1) * ' + CFG.maxCol + 'px)!important;' +
-                'max-width:' + CFG.maxCol + 'px!important;position:static!important;' +
-                'top:auto!important;bottom:auto!important;margin:0!important;transform:none!important;' +
+
+            // chat-container = chat-window 内部满宽
+            cls + ' .chat-container{width:100%!important;max-width:100%!important;' +
+                'margin-left:auto!important;margin-right:auto!important;box-sizing:border-box!important}',
+
+            // 历史列表：外层容器原生的 max-width（约 724px）会锁死内部列，
+            // 这里放开到 100%，列宽由 chat-window 决定。
+            cls + ' chat-window .chat-history-scroll-container{width:100%!important;max-width:100%!important}',
+            cls + ' chat-window infinite-scroller.chat-history{width:100%!important}',
+
+            // 提问气泡 / 回答正文：原生 708px 上限；100% 时与原生一致（708 宽 + 16px 边距）
+            cls + ' chat-window .conversation-container{max-width:100%!important;width:100%!important;' +
+                'margin-left:0!important;margin-right:0!important;align-items:stretch!important}',
+            cls + ' chat-window .conversation-container > user-query{max-width:100%!important;width:100%!important;' +
+                'margin-left:0!important;margin-right:0!important}',
+            cls + ' chat-window .conversation-container model-response{width:100%!important}',
+            cls + ' chat-window .conversation-container model-response-disclaimers{max-width:100%!important;width:100%!important;' +
+                'margin-inline:0!important}',
+
+            // 输入区：脱离 absolute，交给 input-container 的居中
+            cls + ' input-container{display:flex!important;flex-direction:column!important;' +
+                'align-items:center!important;width:100%!important}',
+            cls + ' .input-area-container{position:static!important;top:auto!important;bottom:auto!important;' +
+                'left:auto!important;right:auto!important;margin:0!important;transform:none!important;' +
+                'width:min(' + CFG.maxCol + 'px,100%)!important;max-width:' + CFG.maxCol + 'px!important;' +
                 'box-sizing:border-box!important}',
-            'html.' + CFG.cls + ' input-container{display:flex!important;flex-direction:column!important;' +
-                'align-items:center!important}',
-            'html.' + CFG.cls + ' hallucination-disclaimer{width:' + col + '!important;' +
-                'max-width:' + CFG.maxCol + 'px!important;box-sizing:border-box!important}'
+            // 回到最新按钮原生是 absolute（不占位），保持，只把它按居中位置摆好
+            cls + ' back-to-bottom-fab{position:absolute!important;left:50%!important;' +
+                'margin-left:-20px!important;right:auto!important;top:auto!important;bottom:100%!important;' +
+                'margin-bottom:8px!important}',
+
+            // 底部免责声明 + 额度告警：与输入框同列居中
+            cls + ' hallucination-disclaimer{width:100%!important;max-width:none!important;' +
+                'margin-left:auto!important;margin-right:auto!important;box-sizing:border-box!important}',
+            cls + ' gxu-usage-warning-disclaimer.above-input-area{width:100%!important;max-width:none!important;' +
+                'margin-left:auto!important;margin-right:auto!important;box-sizing:border-box!important}',
+            cls + ' .in-conv-flow-bar{max-width:100%!important;margin-left:0!important;margin-right:0!important}'
         ].join('\n');
     }
 
     function injectStyle() {
         var st = document.getElementById(CFG.styleId);
         if (!st) {
+            if (!document.head && !document.documentElement) return;
             st = document.createElement('style');
             st.id = CFG.styleId;
-            var head = document.head || document.documentElement;
-            if (!head) return;
-            head.appendChild(st);
+            (document.head || document.documentElement).appendChild(st);
         }
-        st.textContent = styleText();
+        var css = styleText();
+        if (st.textContent !== css) st.textContent = css;
     }
 
+    // 唯一需要写在变量里的动态量：比例。用 cqw 表达，窗口一变浏览器自己重算。
     function applyVar() {
         var de = document.documentElement;
         if (!de) return;
-        de.style.setProperty('--gw-k', String(state.pct / 100));
-        de.style.setProperty('--gw-sb', sbPx + 'px');
+        var k = state.pct + 'cqw';
+        de.style.setProperty('--gw-k', k);
     }
 
     // 覆盖总开关：摘掉它就回到 Gemini 原生宽度。
     function setOn(on) {
         var de = document.documentElement;
         if (!de || !de.classList) return;
+        state.on = !!on;
         if (on) de.classList.add(CFG.cls);
         else de.classList.remove(CFG.cls);
-    }
-
-    /* ================= 侧栏宽度 ================= */
-    // 侧栏展开 288px、折叠 52px，收起之后内容区跟着变宽。
-    // 不实测的话，折叠状态下所有列都会整体右偏。
-    function measureSidebar() {
-        var nav = document.querySelector('bard-sidenav');
-        if (!nav) return;
-        var w = 0;
-        try { w = nav.getBoundingClientRect().width || 0; } catch (e) { w = 0; }
-        // 面板隐藏或侧栏还没布局时量到 0，保留上一次的值，避免列宽跟着跳成满宽。
-        if (!(w > 0 && w < window.innerWidth * 0.6)) return;
-        w = Math.round(w);
-        if (w === sbPx) return;
-        sbPx = w;
-        if (isOn()) applyVar();
+        applyVar();
     }
 
     function isOn() {
         var de = document.documentElement;
         return !!(de && de.classList && de.classList.contains(CFG.cls));
     }
+
     /* ================= 面板 ================= */
 
     // 面板 DOM 全部用 createElement 搭出来。Gemini 启用了 Trusted Types，
@@ -249,23 +270,17 @@
             quick.appendChild(b);
         }
 
-        var act = el('div', 'act');
-        var mb = el('button', null, '重新测量侧栏');
-        mb.id = 'btn-measure';
-        act.appendChild(mb);
-
         var tip = el('div', 'tip');
         tip.id = 'tip';
         tip.appendChild(el('b', null, '滚轮微调 · 拖标题移动'));
 
         body.appendChild(range);
         body.appendChild(quick);
-        body.appendChild(act);
         body.appendChild(tip);
         wrap.appendChild(bar);
         wrap.appendChild(body);
         sh.appendChild(wrap);
-        return { wrap: wrap, bar: bar, val: val, range: range, tip: tip, close: close, quick: quick, measure: mb };
+        return { wrap: wrap, bar: bar, val: val, range: range, tip: tip, close: close, quick: quick };
     }
 
     function detectTheme() {
@@ -320,10 +335,6 @@
         els.range.addEventListener('input', function (e) { setPctLive(e.target.value); });
         els.range.addEventListener('change', function (e) { setPctLive(e.target.value); });
         els.close.addEventListener('click', function (e) { e.stopPropagation(); closePanel(); });
-        els.measure.addEventListener('click', function (e) {
-            e.stopPropagation();
-            remeasure(true);
-        });
         els.quick.addEventListener('click', function (e) {
             var b = e.target && e.target.closest ? e.target.closest('button') : null;
             if (!b) return;
@@ -420,9 +431,6 @@
             if (on) btns[i].setAttribute('data-on', '1');
             else btns[i].removeAttribute('data-on');
         }
-        if (els.tip) {
-            els.tip.innerHTML = '<b>滚轮微调 · 拖标题移动</b>　侧栏 ' + sbPx + 'px';
-        }
     }
 
     // 滑块/滚轮：同一帧里多次变化只改一次 CSS 变量，状态存盘放到手势停下之后。
@@ -445,24 +453,15 @@
     function setPct(v) {
         state.pct = clampPct(v);
         setOn(true);
-        measureSidebar();
-        applyVar();
         syncUI();
         saveState();
     }
 
     function setNative() {
+        state.pct = CFG.def;
         setOn(false);
         syncUI();
         saveState();
-    }
-
-    function remeasure(force) {
-        if (force) sbPx = 0;
-        measureSidebar();
-        if (!sbPx) sbPx = CFG.sbW;
-        applyVar();
-        syncUI();
     }
 
     /* ================= 启动 ================= */
@@ -470,8 +469,7 @@
     function boot() {
         loadState();
         injectStyle();
-        setOn(true);
-        remeasure(false);
+        setOn(state.on !== false);
         syncUI();
     }
 
@@ -480,17 +478,15 @@
         if (resizeRaf) return;
         resizeRaf = window.requestAnimationFrame(function () {
             resizeRaf = 0;
-            measureSidebar();
             injectStyle();
         });
     });
     window.addEventListener('DOMContentLoaded', boot, { once: true });
-    window.addEventListener('load', function () { measureSidebar(); injectStyle(); }, { once: true });
-    // Gemini 是 SPA：换会话、开关侧栏、进入设置都会重排，定期复查侧栏宽度与样式表是否还在。
+    window.addEventListener('load', function () { injectStyle(); }, { once: true });
+    // Gemini 是 SPA：换会话、开合侧栏都会重排 head，样式表被换掉时补回去。
     window.setInterval(function () {
-        measureSidebar();
         if (!document.getElementById(CFG.styleId)) injectStyle();
-    }, 1200);
+    }, 1500);
     // 菜单项只有一条：打开设置面板。其余操作都在面板里。
     try {
         if (typeof GM_registerMenuCommand === 'function') {
@@ -507,7 +503,7 @@
         }
     }, true);
 
-    // 模拟窗口变化的测试钩子：只改 vw 的值，列宽应自动跟着变，无需重算。
+    // 模拟窗口变化的测试钩子。
     window.addEventListener(CFG.event, function () {
         injectStyle();
         applyVar();

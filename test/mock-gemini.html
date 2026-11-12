@@ -11,18 +11,30 @@
   bard-sidenav-container{flex:1;display:flex;min-width:0}
   bard-sidenav{width:288px;flex:0 0 288px;background:#1e1f20;padding:16px;box-sizing:border-box}
   bard-sidenav.collapsed{width:52px;flex-basis:52px;padding:8px}
-  bard-sidenav-content{flex:1 1 0;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+  bard-sidenav-content{flex:1 1 0;min-width:0;display:flex;flex-direction:column;overflow:hidden;container-type:inline-size}
   .content-wrapper{flex:1;display:flex;min-height:0}
-  .content-container{flex:1;display:flex;min-height:0}
-  body.narrow{width:960px!important}
-  chat-window{flex:1;display:flex;justify-content:center;align-items:stretch;overflow-y:auto;overflow-x:hidden}
+  .content-container{flex:1;display:flex;min-height:0;position:relative}
+  .content-container>.chat-container{flex:1;display:flex;flex-direction:column;width:100%;min-width:0;padding:0;box-sizing:border-box}
+  .chat-container chat-window{flex:1;min-height:0;display:flex;flex-direction:column;width:100%}
+  chat-window .conversation-container > user-query{width:100%;max-width:100%;margin:0}
+  chat-window model-response{width:100%;max-width:100%}
+  chat-window .input-container{display:block}
+
+  body.narrow chat-app-orchestrator{width:960px}
+  body.narrow.bigside chat-app-orchestrator{width:1600px}
+  chat-window .conversation-container{width:min(100%, 760px);margin:0 auto;box-sizing:border-box}
+  html.gw-on chat-window .conversation-container{width:100%}
+  chat-window .input-area-container{max-width:660px}
+  chat-window{flex:1;display:block;position:relative;overflow-y:auto;overflow-x:hidden}
+  chat-window>infinite-scroller.chat-history{display:block}
+  chat-window>infinite-scroller.chat-history> .conversation-container{padding:16px 0}
   .chat-container{width:100%;display:flex;flex-direction:column;gap:12px;padding:16px;box-sizing:border-box;overflow:hidden}
   chat-window-content{display:contents}
-  .conversation-container{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
-  user-query{display:block;max-width:760px;margin-left:auto;background:#2a2b2c;border-radius:16px;padding:10px 14px}
-  model-response{display:block;max-width:760px}
+  .conversation-container{width:100%;display:flex;flex-direction:column;gap:10px;margin:0 auto}
+  user-query{display:block;width:760px;max-width:100%;margin-left:auto;box-sizing:border-box;background:#2a2b2c;border-radius:16px;padding:10px 14px}
+  model-response{display:block;width:100%;box-sizing:border-box}
   .input-container{display:flex;justify-content:flex-end;padding:16px;position:relative}
-  .input-area-container{position:absolute;top:-404px;left:0;transform:matrix(1,0,0,1,0,32);max-width:760px;width:100%;
+  .input-area-container{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);max-width:760px;width:100%;
     background:#1e1f20;border:1px solid #444746;border-radius:24px;padding:12px 16px;box-sizing:border-box}
   .zero-state-container{display:flex;justify-content:center;max-width:760px;margin:0 auto;padding:20px 0}
   .modular-zero-state-container{width:760px;text-align:center;color:#9aa0a6}
@@ -54,7 +66,22 @@
   </chat-app>
 </chat-app-orchestrator>
 <script>
-  (function () {
+// 自检：一次收窄后立刻回滚，原生布局必须回到原处
+window.__rollback = async function () {
+  var de = document.documentElement;
+  function rect(sel){var n=document.querySelector(sel);if(!n)return null;var r=n.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)};}
+  function snap(){var ia=document.querySelector('.input-area-container');return {ic:rect('.input-container'),ia:rect('.input-area-container'),zs:rect('.zero-state-container'),pos:ia?getComputedStyle(ia).position:null};}
+  var before = snap();
+  de.classList.add('gw-on'); de.style.setProperty('--gw-k','50cqw');
+  await new Promise(function(r){setTimeout(r,150);});
+  var mid = snap();
+  de.style.removeProperty('--gw-k'); de.classList.remove('gw-on');
+  await new Promise(function(r){setTimeout(r,150);});
+  return {before: before, mid: mid, after: snap()};
+};
+</script>
+<script>
+(function () {
     var chat = document.getElementById('chat');
     var mode = new URLSearchParams(location.search).get('mode') || 'conv';
 
@@ -83,6 +110,8 @@
 
     // 会话视图：conversation-container + 输入框
     function buildConv() {
+      var win = document.getElementById('win');
+      var hist = el('infinite-scroller', 'chat-history');
       var conv = el('div', 'conversation-container');
       for (var i = 0; i < 6; i++) {
         var uq = el('user-query', '', '第 ' + (i + 1) + ' 个问题：浏览器窗口宽度和内容列宽度是什么关系');
@@ -92,10 +121,11 @@
         conv.appendChild(uq);
         conv.appendChild(mr);
       }
-      chat.appendChild(conv);
+      hist.appendChild(conv);
+      win.appendChild(hist);
       var ic = el('div', 'input-container');
       ic.appendChild(el('div', 'input-area-container', '问问 Gemini'));
-      chat.appendChild(ic);
+      win.appendChild(ic);
     }
 
     if (mode === 'zero') buildZero(); else buildConv();
