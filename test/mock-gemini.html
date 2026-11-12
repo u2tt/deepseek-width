@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Gemini mock</title>
+<style>
+  html,body{margin:0;height:100%;background:#131314;color:#e3e3e3;font:14px/1.6 -apple-system,"PingFang SC",sans-serif}
+  chat-app-orchestrator{display:block;height:100%}
+  chat-app{display:block;height:100%}
+  main.chat-app{display:flex;height:100%}
+  bard-sidenav-container{flex:1;display:flex;min-width:0}
+  bard-sidenav{width:288px;flex:0 0 288px;background:#1e1f20;padding:16px;box-sizing:border-box}
+  bard-sidenav.collapsed{width:52px;flex-basis:52px;padding:8px}
+  bard-sidenav-content{flex:1 1 0;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+  .content-wrapper{flex:1;display:flex;min-height:0}
+  .content-container{flex:1;display:flex;min-height:0}
+  body.narrow{width:960px!important}
+  chat-window{flex:1;display:flex;justify-content:center;align-items:stretch;overflow-y:auto;overflow-x:hidden}
+  .chat-container{width:100%;display:flex;flex-direction:column;gap:12px;padding:16px;box-sizing:border-box;overflow:hidden}
+  chat-window-content{display:contents}
+  .conversation-container{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+  user-query{display:block;max-width:760px;margin-left:auto;background:#2a2b2c;border-radius:16px;padding:10px 14px}
+  model-response{display:block;max-width:760px}
+  .input-container{display:flex;justify-content:flex-end;padding:16px;position:relative}
+  .input-area-container{position:absolute;top:-404px;left:0;transform:matrix(1,0,0,1,0,32);max-width:760px;width:100%;
+    background:#1e1f20;border:1px solid #444746;border-radius:24px;padding:12px 16px;box-sizing:border-box}
+  .zero-state-container{display:flex;justify-content:center;max-width:760px;margin:0 auto;padding:20px 0}
+  .modular-zero-state-container{width:760px;text-align:center;color:#9aa0a6}
+  .lb{color:#9aa0a6;font-size:12px;margin-bottom:8px}
+  .nav{display:block;padding:8px 10px;border-radius:10px;color:#c4c7c5;margin-bottom:4px}
+  .nav:hover{background:#2a2b2c}
+</style>
+</head>
+<body>
+<chat-app-orchestrator>
+  <chat-app>
+    <main class="chat-app">
+      <bard-sidenav-container>
+        <bard-sidenav id="side">
+          <a class="nav" href="#">发起新对话</a>
+          <a class="nav" href="#">图片</a>
+          <a class="nav" href="#">设置</a>
+          <button class="nav" id="toggle-side" style="border:0;background:transparent;font:inherit;cursor:pointer">折叠边栏</button>
+        </bard-sidenav>
+        <bard-sidenav-content>
+          <div class="content-wrapper"><div class="content-container">
+            <chat-window id="win">
+              <div class="chat-container" id="chat"></div>
+            </chat-window>
+          </div></div>
+        </bard-sidenav-content>
+      </bard-sidenav-container>
+    </main>
+  </chat-app>
+</chat-app-orchestrator>
+<script>
+  (function () {
+    var chat = document.getElementById('chat');
+    var mode = new URLSearchParams(location.search).get('mode') || 'conv';
+
+    function el(tag, cls, text) {
+      var n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text) n.textContent = text;
+      return n;
+    }
+
+    // 零态（首页）：chat-window-content 里放 zero-state-container + input-container
+    function buildZero() {
+      var wc = el('chat-window-content', '');
+      wc.appendChild(el('span', 'dummy'));
+      var zs = el('div', 'zero-state-container');
+      var mz = el('div', 'modular-zero-state-container');
+      mz.appendChild(el('div', 'lb', 'Gemini'));
+      mz.appendChild(el('h1', '', '嗨，我是 Gemini'));
+      zs.appendChild(mz);
+      var ic = el('div', 'input-container');
+      ic.appendChild(el('div', 'input-area-container', '问问 Gemini'));
+      wc.appendChild(zs);
+      wc.appendChild(ic);
+      chat.appendChild(wc);
+    }
+
+    // 会话视图：conversation-container + 输入框
+    function buildConv() {
+      var conv = el('div', 'conversation-container');
+      for (var i = 0; i < 6; i++) {
+        var uq = el('user-query', '', '第 ' + (i + 1) + ' 个问题：浏览器窗口宽度和内容列宽度是什么关系');
+        var mr = el('model-response', '');
+        mr.appendChild(el('div', 'lb', 'Gemini'));
+        mr.appendChild(el('div', '', '窗口宽度提供页面的总空间，内容列用百分比限制最大宽度，所以窗口变宽时列按比例变宽，同时不会无限拉长导致阅读困难。'));
+        conv.appendChild(uq);
+        conv.appendChild(mr);
+      }
+      chat.appendChild(conv);
+      var ic = el('div', 'input-container');
+      ic.appendChild(el('div', 'input-area-container', '问问 Gemini'));
+      chat.appendChild(ic);
+    }
+
+    if (mode === 'zero') buildZero(); else buildConv();
+
+    document.getElementById('toggle-side').addEventListener('click', function () {
+      document.getElementById('side').classList.toggle('collapsed');
+    });
+    window.__mode = mode;
+
+  })();
+</script>
+</body>
+</html>

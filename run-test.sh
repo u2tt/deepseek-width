@@ -36,3 +36,21 @@ echo; echo "== 滚动锚定 1500x850 =="; anchor 1500 850
 echo; echo "== 滚动锚定 1100x700 =="; anchor 1100 700
 echo; echo "== 思考隐藏 + 设置面板 =="; think
 echo
+
+# ===== Gemini 宽屏脚本 =====
+# file:// 下 iframe 是跨源（origin null），父页拿不到它的 document；
+# 用本地 http 服务起测，跑完关掉。
+gw() {
+  local srv=8931 dir out
+  (cd "$HERE" && python3 -m http.server $srv --bind 127.0.0.1 >/dev/null 2>&1) &
+  local pid=$!
+  sleep 1
+  dir="$(mktemp -d /tmp/gw-gemini.XXXXXX)"
+  out=$("$CHROME" --headless --disable-gpu --no-first-run --no-default-browser-check \
+    --user-data-dir="$dir" --virtual-time-budget=40000 --window-size=1400,1000 --dump-dom \
+    "http://127.0.0.1:$srv/test/mock-gemini-run.html" 2>/dev/null \
+    | grep -o 'GWJSON={[^<]*')
+  kill $pid 2>/dev/null
+  echo "$out"
+}
+echo; echo "== Gemini 宽度（会话 + 零态）=="; gw
