@@ -200,7 +200,8 @@ Greasy Fork 脚本页的「附加信息」（介绍页）从本仓库的 [docs/g
 
 ### 实现方式
 
-- 侧栏 `bard-sidenav` 是 flex 兄弟项，`bard-sidenav-content` 的宽度天然等于「窗口 − 侧栏」，且不受内容影响。脚本把它设成容器查询容器，`chat-window` 的宽度写成 `var(--gw-k)` = `Ncqw`，比例因此始终相对内容区，侧栏一折叠就自动变宽重算。
+- 侧栏 `bard-sidenav` 是 flex 兄弟项，`bard-sidenav-content` 的宽度天然等于「窗口 − 侧栏」，且不受内容影响。`chat-window` 的宽度写成 `calc(var(--gw-k) * 100%)`，`--gw-k` 是 0 到 1 的纯数字，比例因此始终相对内容区，侧栏一折叠或窗口变化都由浏览器自己重算。
+- 不用容器查询 `cqw`：`chat-window` 在部分布局下拿不到容器宽度，`cqw` 与百分比一起退化成 `auto`，整列会塌成几十像素的窄缝，表现为用户气泡被推到最右边、回答区不收窄。
 - `chat-window` 同时要 `flex:none`：它原生是 flex 子项，不取消拉伸时 `width` 会被 flex 布局覆盖，比例不生效。
 - 通道打通：`.chat-container`、`.chat-history-scroll-container`、`infinite-scroller.chat-history`、`.conversation-container`、`user-query`、`model-response`、`model-response-disclaimers` 全部放开到 100%，列宽只由 `chat-window` 决定。
 - 输入框 `.input-area-container` 原生 `position:absolute`，改成 `static` 后由 `input-container`（改为纵向居中）摆放，宽度固定 660px 上限，不随比例缩放；免责声明与输入框同列居中。
@@ -219,10 +220,12 @@ Greasy Fork 脚本页的「附加信息」（介绍页）从本仓库的 [docs/g
 | 模拟页窗口收窄 | 宽 1112 → 窄 672，列 890 → 538，输入框不变 |
 | 模拟页回滚 | 摘掉开关后输入框位置与原生完全一致 |
 | 模拟页断言 | 会话视图 13 项、零态 12 项全部通过；DeepSeek 脚本 5 组套件 28 项全部通过 |
-| 真实页 100% | chat-window 1152、零态容器 1152、免责声明 1120、输入框 660 |
-| 真实页 80% | chat-window 922@403、零态容器 922、免责声明 890 |
-| 真实页 60% | chat-window 691@518、零态容器 691、输入框 659、免责声明 659 |
-| 真实页回到 100% | 全部复位到原生数值 |
+| 真实页 100% | chat-window 1228@52、零态容器 1228、免责声明 1196@68、输入框 660@336 |
+| 真实页 80% | chat-window 982@175、零态容器 982、免责声明 950@191、输入框 660@336 |
+| 真实页 60% | chat-window 737@298、零态容器 737、免责声明 705@314、输入框 660@336 |
+| 真实页 45% | chat-window 553@390、输入框 521@406（小于 45% 后输入框才跟随收窄） |
+| 真实页 30% | chat-window 368@482、输入框 336@498 |
+| 真实页回到 100% | 全部复位到原生数值（窗口 1280、侧栏 52） |
 
 截图：`test/gw-real-100.png`（100%）、`test/gw-real-60.png`（60%）、`test/gw-panel.png`（设置面板）。
 

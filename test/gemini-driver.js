@@ -67,7 +67,7 @@
     // 4. 回到 80%
     res.back = await step(80);
 
-    // 5. 折叠侧栏：容器宽了，cqw 跟着变，列宽按比例重算
+    // 5. 折叠侧栏：内容区变宽，calc(比例 x 100%) 跟着变，列宽按比例重算
     document.getElementById('toggle-side').click();
     await wait(200);
     res.collapsed = { conv: box('chat-window .chat-history .conversation-container > user-query:first-child'), side: box('bard-sidenav'), sab: box('bard-sidenav-content'), chat: box('chat-window'), ia: box('.input-area-container') };

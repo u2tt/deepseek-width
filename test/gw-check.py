@@ -53,11 +53,11 @@ else:
         add('80 < 满宽', z80 and z80['w'] < sab_w - 100, {'s80': z80, 'sabW': sab_w})
 
     add('滑块口径', s100.get('val') == '100%' and s80.get('val') == '80%', [s100.get('val'), s80.get('val')])
-    add('--gw-k', s80.get('k') == '80cqw', s80.get('k'))
+    add('--gw-k', s80.get('k') == '0.8', s80.get('k'))
 
     nb = d.get('nativeBtn') or {}
     add('原生按钮', nb.get('on') is False and nb.get('val') == '原生', nb)
-    add('回 80%', back.get('k') == '80cqw' and back.get('val') == '80%', [back.get('k'), back.get('val')])
+    add('回 80%', back.get('k') == '0.8' and back.get('val') == '80%', [back.get('k'), back.get('val')])
 
     col_ = d.get('collapsed') or {}
     exp = d.get('expanded') or {}

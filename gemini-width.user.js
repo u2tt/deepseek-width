@@ -2,7 +2,7 @@
 // @name         Gemini 内容宽度调节
 // @name:en      Gemini Content Width Tuner
 // @namespace    https://github.com/u2tt/gemini-width
-// @version      2.0.1
+// @version      2.0.2
 // @description  按相对比例调节 Gemini 网页端整列内容的宽度（对话、回答、输入框、免责声明一起收窄并居中，随窗口自适应），设置面板从油猴菜单打开
 // @description:en Tune the whole content column of Gemini (conversation, answers, input box, disclaimer) by a relative percentage that follows the window size. Open settings from the userscript menu.
 // @author       chenxinyu
@@ -89,11 +89,11 @@
     function styleText() {
         var cls = 'html.' + CFG.cls;
         return [
-            // 容器查询：cqw 以 bard-sidenav-content 的内容盒为 100%
-            cls + ' bard-sidenav-content{container-type:inline-size!important}',
-
-            // 主体：chat-window 自己的宽度 = 内容区 x 比例，水平居中，两侧阴影区透明
-            cls + ' chat-window{flex:none!important;width:var(--gw-k,100cqw)!important;max-width:none!important;' +
+            // 主体：chat-window 自己的宽度 = 内容区 x 比例，水平居中，两侧留白
+            // 比例必须是纯数字（0~1）再乘 100%：cqw 只在容器里成立，一旦内容区不是
+            // chat-window 的包含块（成为高度受限的 flex 子项），cqw 与百分比一起失效，
+            // 整列被撑成一条窄缝（已实测）。calc(比例 x 100%) 只依赖包含块宽度。
+            cls + ' chat-window{flex:none!important;width:calc(var(--gw-k,1) * 100%)!important;max-width:none!important;' +
                 'margin-left:auto!important;margin-right:auto!important;box-sizing:border-box!important}',
 
             // chat-container = chat-window 内部满宽
@@ -147,11 +147,12 @@
         if (st.textContent !== css) st.textContent = css;
     }
 
-    // 唯一需要写在变量里的动态量：比例。用 cqw 表达，窗口一变浏览器自己重算。
+    // 唯一需要写在变量里的动态量：比例（0~1 的纯数字，CSS 里乘 100% 用）。
+    // 不用 cqw / 百分比变量：容器查询只在元素是容器的后代时生效，失效时宽度会塌成窄缝。
     function applyVar() {
         var de = document.documentElement;
         if (!de) return;
-        var k = state.pct + 'cqw';
+        var k = state.pct / 100;
         de.style.setProperty('--gw-k', k);
     }
 

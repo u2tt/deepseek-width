@@ -72,7 +72,7 @@ window.__rollback = async function () {
   function rect(sel){var n=document.querySelector(sel);if(!n)return null;var r=n.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)};}
   function snap(){var ia=document.querySelector('.input-area-container');return {ic:rect('.input-container'),ia:rect('.input-area-container'),zs:rect('.zero-state-container'),pos:ia?getComputedStyle(ia).position:null};}
   var before = snap();
-  de.classList.add('gw-on'); de.style.setProperty('--gw-k','50cqw');
+  de.classList.add('gw-on'); de.style.setProperty('--gw-k','0.5');
   await new Promise(function(r){setTimeout(r,150);});
   var mid = snap();
   de.style.removeProperty('--gw-k'); de.classList.remove('gw-on');
