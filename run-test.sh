@@ -30,6 +30,9 @@ think() {
     "file://$HERE/test/mock-think.html" 2>/dev/null \
     | grep -o 'DSWTHINK={[^<]*' | head -c 4000
 }
+# 测试前按当前脚本重新内嵌 Gemini 外壳页，避免测到旧副本
+node "$HERE/test/build-gemini-run.cjs" >/dev/null
+
 echo "== 宽度 1600x900 =="; run 1600 900
 echo; echo "== 宽度 1200x800 =="; run 1200 800
 echo; echo "== 滚动锚定 1500x850 =="; anchor 1500 850

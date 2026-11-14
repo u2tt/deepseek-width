@@ -55,11 +55,15 @@ else:
     # 输入框必须跟着列宽一起变（原生 660px 上限会让它在列宽超过 660 之后停住）
     ia100 = s100.get('ia')
     ia80 = s80.get('ia')
+    col100 = s100.get(col)
     col80 = s80.get(col)
-    add('输入框跟随列宽', ia100 and ia80 and ia100.get('w') and ia80.get('w') and col80
-        and abs(ia80['w'] - col80['w']) <= 40
-        and ia80['w'] < ia100['w'] - 100,
-        {'ia100': ia100, 'ia80': ia80, 'col80': col80})
+    # 输入框与内容列之间可能有固定的左右内边距，两种页面不同，所以比「缩窄量」而不是绝对值
+    d_ia = (ia100['w'] - ia80['w']) if (ia100 and ia80 and ia100.get('w') and ia80.get('w')) else None
+    d_col = (col100['w'] - col80['w']) if (col100 and col80 and col100.get('w') and col80.get('w')) else None
+    add('输入框跟随列宽', d_ia is not None and d_col is not None
+        and abs(d_ia - d_col) <= 8
+        and d_ia >= 100,
+        {'ia100': ia100, 'ia80': ia80, 'col100': col100, 'col80': col80, 'deltaIa': d_ia, 'deltaCol': d_col})
     add('滑块口径', s100.get('val') == '100%' and s80.get('val') == '80%', [s100.get('val'), s80.get('val')])
     add('--gw-k', s80.get('k') == '0.8', s80.get('k'))
 
@@ -78,8 +82,9 @@ else:
 
     nar = d.get('narrow') or {}
     wide = d.get('wide') or {}
-    add('窗口变窄列跟随', nar.get('conv') and wide.get('conv') and nar['conv']['w'] < wide['conv']['w'] - 100,
-        {'narrow': nar.get('conv'), 'wide': wide.get('conv')})
+    # 零态页面没有 user-query，用当前模式对应的列元素比较
+    add('窗口变窄列跟随', nar.get(col) and wide.get(col) and nar[col]['w'] < wide[col]['w'] - 100,
+        {'narrow': nar.get(col), 'wide': wide.get(col)})
 
     rb = d.get('rollback') or {}
     b = rb.get('before') or {}
