@@ -52,6 +52,14 @@ else:
         z80 = s80.get('chat')
         add('80 < 满宽', z80 and z80['w'] < sab_w - 100, {'s80': z80, 'sabW': sab_w})
 
+    # 输入框必须跟着列宽一起变（原生 660px 上限会让它在列宽超过 660 之后停住）
+    ia100 = s100.get('ia')
+    ia80 = s80.get('ia')
+    col80 = s80.get(col)
+    add('输入框跟随列宽', ia100 and ia80 and ia100.get('w') and ia80.get('w') and col80
+        and abs(ia80['w'] - col80['w']) <= 40
+        and ia80['w'] < ia100['w'] - 100,
+        {'ia100': ia100, 'ia80': ia80, 'col80': col80})
     add('滑块口径', s100.get('val') == '100%' and s80.get('val') == '80%', [s100.get('val'), s80.get('val')])
     add('--gw-k', s80.get('k') == '0.8', s80.get('k'))
 

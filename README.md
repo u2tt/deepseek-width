@@ -177,12 +177,12 @@ Greasy Fork 脚本页的「附加信息」（介绍页）从本仓库的 [docs/g
 
 ## 二、Gemini 内容宽度调节
 
-相同的思路搬到 gemini.google.com：整列内容（对话、回答、免责声明、零态首页标题）按同一比例收窄并居中，输入框跟随居中并保持 Gemini 自身的 660px 上限。比例是相对「内容区」的，不是固定像素，拖浏览器窗口或折叠侧栏时宽度自动跟随。面板不常驻，从油猴菜单打开。
+相同的思路搬到 gemini.google.com：整列内容（对话行、回答正文、输入框、免责声明、零态首页标题）按同一比例收窄并居中，回答里的段落、标题、列表也跟着列宽一起缩放。比例是相对「内容区」的，不是固定像素，拖浏览器窗口或折叠侧栏时宽度自动跟随。面板不常驻，从油猴菜单打开。
 
 ### 安装
 
 1. 浏览器装 Tampermonkey（或 Violentmonkey / 脚本猫）。
-2. 装上 `gemini-width.user.js`（版本 2.0.1）：打开仓库里的 [gemini-width.user.js](gemini-width.user.js) 点 Raw，或把文件直接拖进浏览器窗口，Tampermonkey 弹出安装页后点安装。
+2. 装上 `gemini-width.user.js`（版本 2.1.0）：打开仓库里的 [gemini-width.user.js](gemini-width.user.js) 点 Raw，或把文件直接拖进浏览器窗口，Tampermonkey 弹出安装页后点安装。
 3. 打开 https://gemini.google.com/ ，点油猴图标 →「⚙ 打开设置面板」，右下角弹出设置页。
 
 ### 使用
@@ -204,7 +204,8 @@ Greasy Fork 脚本页的「附加信息」（介绍页）从本仓库的 [docs/g
 - 不用容器查询 `cqw`：`chat-window` 在部分布局下拿不到容器宽度，`cqw` 与百分比一起退化成 `auto`，整列会塌成几十像素的窄缝，表现为用户气泡被推到最右边、回答区不收窄。
 - `chat-window` 同时要 `flex:none`：它原生是 flex 子项，不取消拉伸时 `width` 会被 flex 布局覆盖，比例不生效。
 - 通道打通：`.chat-container`、`.chat-history-scroll-container`、`infinite-scroller.chat-history`、`.conversation-container`、`user-query`、`model-response`、`model-response-disclaimers` 全部放开到 100%，列宽只由 `chat-window` 决定。
-- 输入框 `.input-area-container` 原生 `position:absolute`，改成 `static` 后由 `input-container`（改为纵向居中）摆放，宽度固定 660px 上限，不随比例缩放；免责声明与输入框同列居中。
+- 输入框 `.input-area-container` 原生 `position:absolute` 且宽 660px 上限，改成 `static` 后由 `input-container`（改为纵向居中）摆放，宽度跟随列宽；里面的输入框本体也放开上限，避免外层变宽、内部仍锁在 660。
+- **回答正文的 708px 上限是「比例看起来失效」的第二个原因**：Gemini 给 markdown 里每个顶级块（段落、标题、列表、代码块）都写了 `max-width:708px; margin-inline:auto`，回答头部栏、脚注、操作按钮也是 708px 加一个 JS 算出来的 `margin-left`。列宽超过 708px 之后，正文不再变宽、只是整体挪位置。脚本把这些块放开到 100%，把 708px 的 chrome 元素改成满宽无外边距。
 - 只有 `--gw-k` 一个动态量，其余全是静态 CSS，窗口变化由浏览器自己重算，不需要在 resize 里跑计算。
 - **面板 DOM 全部用 createElement 搭**：Gemini 开了 Trusted Types，`shadowRoot.innerHTML = '...'` 会直接抛 `This document requires 'TrustedHTML' assignment`，面板建不出来。现在只在需要时才用 `trustedTypes.createPolicy` 生成 HTML。
 - 状态用 `GM_setValue`，没有 `GM_*` 时回落 `localStorage`；Gemini 是 SPA，样式表被框架换掉时脚本每 1.5 秒补回。
@@ -220,18 +221,18 @@ Greasy Fork 脚本页的「附加信息」（介绍页）从本仓库的 [docs/g
 | 模拟页窗口收窄 | 宽 1112 → 窄 672，列 890 → 538，输入框不变 |
 | 模拟页回滚 | 摘掉开关后输入框位置与原生完全一致 |
 | 模拟页断言 | 会话视图 13 项、零态 12 项全部通过；DeepSeek 脚本 5 组套件 28 项全部通过 |
-| 真实页 100%（已登录对话） | chat-window 992、对话行 980@300，与原生理一致 |
-| 真实页 90% / 80% / 70% | 对话行 881 / 782 / 682，对话列与气泡同宽收窄 |
-| 真实页 100%（未登录零态） | chat-window 1228@52、零态容器 1228、免责声明 1196@68、输入框 660@336 |
-| 真实页 80%（未登录零态） | chat-window 982@175、零态容器 982、免责声明 950@191、输入框 660@336 |
-| 真实页 60% | chat-window 737@298、零态容器 737、免责声明 705@314、输入框 660@336 |
-| 真实页 45% | chat-window 553@390、输入框 521@406（小于 45% 后输入框才跟随收窄） |
-| 真实页 30% | chat-window 368@482、输入框 336@498 |
-| 真实页回到 100% | 全部复位到原生数值（窗口 1280、侧栏 52） |
+| 真实页 100%（对话，窗口 1280） | chat-window 1228@52、段落 1216@64、输入框 1196@68 |
+| 真实页 85% | chat-window 1044@144、段落 1032@156、输入框 1012@160 |
+| 真实页 70% | chat-window 860@236、段落 848@248、输入框 828@252 |
+| 真实页 60% | chat-window 737@298、段落 725@310、输入框 705@314 |
+| 真实页 45% | chat-window 553@390、段落 541@402、输入框 521@406 |
+| 真实页 30% | chat-window 368@482、段落 356@494、输入框 336@498 |
+| 真实页 摘掉开关 | chat-window 1228、段落回到 708@318 居中、输入框回到 660@336 |
+| 真实页 100%（未登录零态） | chat-window 1228@52、零态容器 1228、免责声明 1196@68 |
 
-截图：`test/gw-real-100.png`（100%）、`test/gw-real-60.png`（60%）、`test/gw-panel.png`（设置面板）。
+截图：`test/gw-real-100.png`（100%）、`test/gw-real-85.png`（85%）、`test/gw-real-60.png`（60%）、`test/gw-panel.png`（设置面板）。
 
-已知限制：侧栏占位决定了内容区上限，所以 100% 就是 Gemini 原生宽度，脚本只做「收窄并居中」。输入框保持 Gemini 固定的 660px 上限，不随比例缩小。
+已知限制：侧栏占位决定了内容区上限，所以 100% 就是「内容区满宽」，比 Gemini 原生版式（正文 708px 居中）宽得多，正文行会很长；想接近原生阅读宽度用 55% – 60%。
 
 ## 许可
 

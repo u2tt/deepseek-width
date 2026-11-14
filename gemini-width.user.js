@@ -2,7 +2,7 @@
 // @name         Gemini 内容宽度调节
 // @name:en      Gemini Content Width Tuner
 // @namespace    https://github.com/u2tt/gemini-width
-// @version      2.0.3
+// @version      2.1.0
 // @description  按相对比例调节 Gemini 网页端整列内容的宽度（对话、回答、输入框、免责声明一起收窄并居中，随窗口自适应），设置面板从油猴菜单打开
 // @description:en Tune the whole content column of Gemini (conversation, answers, input box, disclaimer) by a relative percentage that follows the window size. Open settings from the userscript menu.
 // @author       chenxinyu
@@ -29,7 +29,6 @@
         max: 100,
         def: 100,
         // 输入框自身的宽度上限（Gemini 原生值），不随比例缩放。
-        maxCol: 660,
         // 自测用：模拟"浏览器窗口变化"的事件名（真窗口变化走 resize）。
         event: 'gw:resize'
     };
@@ -111,16 +110,41 @@
             cls + ' chat-window .conversation-container > user-query{max-width:100%!important;width:100%!important;' +
                 'margin-left:0!important;margin-right:0!important}',
             cls + ' chat-window .conversation-container model-response{width:100%!important}',
+            // 回答正文内部若有像素上限（不同版本不同），统一放开到列宽，避免"列变宽、字不变"
+            cls + ' chat-window .model-response-text,' +
+                cls + ' chat-window message-content,' +
+                cls + ' chat-window .markdown,' +
+                cls + ' chat-window user-query-content' +
+                '{max-width:100%!important}',
+            // 根因：Gemini 把 markdown 里每个顶级块（段落、标题、列表）都锁在 708px 并
+            // margin-inline:auto 居中，所以列宽超过 708px 之后文字不再变宽、只是挪位置。
+            // 这里把顶级块放开到列宽（:not(#_) 用来压过原生选择器的特异度）。
+            cls + ' chat-window .markdown > :not(#_),' +
+                cls + ' chat-window .md-content > :not(#_){max-width:100%!important}',
+            // 回答的头部栏、脚注、操作按钮同样是 708px + 动态 margin-left，一起放开
+            cls + ' chat-window .response-container-header,' +
+                cls + ' chat-window .response-footer,' +
+                cls + ' chat-window message-actions,' +
+                cls + ' chat-window thinking-overlay,' +
+                cls + ' chat-window .model-response-label-announcer{' +
+                'max-width:none!important;margin-left:0!important;margin-right:0!important}',
             cls + ' chat-window .conversation-container model-response-disclaimers{max-width:100%!important;width:100%!important;' +
                 'margin-inline:0!important}',
 
             // 输入区：脱离 absolute，交给 input-container 的居中
             cls + ' input-container{display:flex!important;flex-direction:column!important;' +
                 'align-items:center!important;width:100%!important}',
+            // 输入框宽度跟着列走，不再保留 Gemini 原生的 660px 上限：
+            // 上限会让输入框在列宽超过 660px 后停止变化，看起来像"比例失效"。
             cls + ' .input-area-container{position:static!important;top:auto!important;bottom:auto!important;' +
                 'left:auto!important;right:auto!important;margin:0!important;transform:none!important;' +
-                'width:min(' + CFG.maxCol + 'px,100%)!important;max-width:' + CFG.maxCol + 'px!important;' +
-                'box-sizing:border-box!important}',
+                'width:100%!important;max-width:none!important;box-sizing:border-box!important}',
+            // 输入框内部的输入框本体也放开上限，避免外层变宽、内部仍被锁在 660
+            cls + ' .input-area-container .text-input-field,' +
+                cls + ' .input-area-container rich-textarea,' +
+                cls + ' .input-area-container .input-area,' +
+                cls + ' .input-area-container textarea' +
+                '{max-width:none!important;width:100%!important;box-sizing:border-box!important}',
             // 回到最新按钮原生是 absolute（不占位），保持，只把它按居中位置摆好
             cls + ' back-to-bottom-fab{position:absolute!important;left:50%!important;' +
                 'margin-left:-20px!important;right:auto!important;top:auto!important;bottom:100%!important;' +
