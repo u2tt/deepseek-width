@@ -2,7 +2,7 @@
 // @name         Gemini 内容宽度调节
 // @name:en      Gemini Content Width Tuner
 // @namespace    https://github.com/u2tt/gemini-width
-// @version      2.0.2
+// @version      2.0.3
 // @description  按相对比例调节 Gemini 网页端整列内容的宽度（对话、回答、输入框、免责声明一起收窄并居中，随窗口自适应），设置面板从油猴菜单打开
 // @description:en Tune the whole content column of Gemini (conversation, answers, input box, disclaimer) by a relative percentage that follows the window size. Open settings from the userscript menu.
 // @author       chenxinyu
